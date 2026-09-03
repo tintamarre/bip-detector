@@ -1,0 +1,10 @@
+[project]
+name = "bip-detection"
+version = "0.1.0"
+description = "Characterisation and detection of a continuous ~3 kHz bip in audio recordings"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.2",
+    "scipy>=1.18.1",
+]

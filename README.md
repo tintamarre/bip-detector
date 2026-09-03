@@ -19,6 +19,9 @@ Live: https://www.tintamarre.be/bip-detector/ (HTTPS is required for microphone 
    must stay on the event's own frequency; the bip is declared **OFF** when a sliding 1 s window
    contains almost no tone frames.
 5. Each ON/OFF pair becomes an event card. The running event shows a live duration.
+6. **Merge gap**: if the bip comes back at the same frequency (±30 Hz) within 3 s of the previous
+   OFF, the previous event is reopened instead of creating a new one. The bip sometimes dips for a
+   second or two, and this keeps such dips inside a single event with one duration.
 
 Events are kept in `localStorage` so they survive a reload. The screen is kept awake while
 listening (where the browser supports it), and the phone vibrates on detection.
@@ -50,7 +53,7 @@ prominence: 28.4 dB above band median
 ## Settings
 
 The **Detector settings** panel exposes the parameters (band, prominence, minimum level,
-frequency tolerance, stability window, ON/OFF frame counts). They are saved in the browser.
+frequency tolerance, stability window, ON/OFF frame counts, merge gap). They are saved in the browser.
 The defaults come from the analysis of real recordings, see [`analysis/README.md`](analysis/README.md):
 the bip was measured at 3151 Hz in one recording and 2942 Hz in two others, hence the wide band.
 

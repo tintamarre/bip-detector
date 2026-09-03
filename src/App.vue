@@ -161,6 +161,10 @@ const showSettings = ref(false)
             <span class="text-gray-500">OFF after (frames)</span>
             <input v-model.number="settings.offFrames" @change="saveSettings" type="number" step="1" class="rounded-lg px-2 py-1 bg-gray-100 dark:bg-dark-700" />
           </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-gray-500">merge gap (s)</span>
+            <input v-model.number="settings.mergeGapS" @change="saveSettings" type="number" step="0.5" min="0" class="rounded-lg px-2 py-1 bg-gray-100 dark:bg-dark-700" />
+          </label>
           <button @click="resetSettings" class="col-span-2 py-1 rounded-lg bg-gray-200 dark:bg-dark-700 hover:bg-gray-300 dark:hover:bg-dark-900 transition-colors">
             Reset to defaults
           </button>

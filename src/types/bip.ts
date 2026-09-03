@@ -14,6 +14,8 @@ export interface DetectorSettings {
   onFrames: number
   /** Consecutive non-tone frames to declare OFF */
   offFrames: number
+  /** A bip reappearing at the same frequency within this many seconds is merged into the previous event */
+  mergeGapS: number
 }
 
 export const DEFAULT_SETTINGS: DetectorSettings = {
@@ -25,6 +27,7 @@ export const DEFAULT_SETTINGS: DetectorSettings = {
   stableFrames: 10,
   onFrames: 6,
   offFrames: 20,
+  mergeGapS: 3,
 }
 
 export interface BipEvent {

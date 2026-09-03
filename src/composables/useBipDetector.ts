@@ -56,7 +56,11 @@ export function useBipDetector() {
   let recentTone: boolean[] = []
   let on = false
   let lockFreq = 0
-  let acc = { freqs: [] as number[], levelPeak: -Infinity, levelSum: 0, promSum: 0, n: 0 }
+  type Acc = { freqs: number[]; levelPeak: number; levelSum: number; promSum: number; n: number }
+  const emptyAcc = (): Acc => ({ freqs: [], levelPeak: -Infinity, levelSum: 0, promSum: 0, n: 0 })
+  let acc: Acc = emptyAcc()
+  /** Accumulator of the last closed event, kept so a quick re-appearance can be merged */
+  let lastAcc: Acc | null = null
 
   function persist() {
     try {
@@ -149,20 +153,42 @@ export function useBipDetector() {
     if (!on && runOn >= s.onFrames) {
       on = true
       status.value = 'bip'
-      lockFreq = median(acc.freqs)
-      const id = (events.value[0]?.id ?? 0) + 1
-      events.value.unshift({
-        id,
-        start: now - (s.onFrames - 1 + Math.floor(s.stableFrames / 2)) * HOP_MS,
-        end: null,
-        freqHz: median(acc.freqs),
-        freqMinHz: Math.min(...acc.freqs),
-        freqMaxHz: Math.max(...acc.freqs),
-        levelPeakDb: acc.levelPeak,
-        levelMeanDb: acc.levelSum / acc.n,
-        prominenceDb: acc.promSum / acc.n,
-        frames: acc.n,
-      })
+      const start = now - (s.onFrames - 1 + Math.floor(s.stableFrames / 2)) * HOP_MS
+      const prev = events.value[0]
+      const freq = median(acc.freqs)
+      const canMerge =
+        prev !== undefined &&
+        prev.end !== null &&
+        lastAcc !== null &&
+        start - prev.end <= s.mergeGapS * 1000 &&
+        Math.abs(freq - prev.freqHz) <= 2 * s.freqTolHz
+      if (canMerge && prev && lastAcc) {
+        // Same bip coming back after a short dip: reopen the previous event
+        acc = {
+          freqs: lastAcc.freqs.concat(acc.freqs),
+          levelPeak: Math.max(lastAcc.levelPeak, acc.levelPeak),
+          levelSum: lastAcc.levelSum + acc.levelSum,
+          promSum: lastAcc.promSum + acc.promSum,
+          n: lastAcc.n + acc.n,
+        }
+        prev.end = null
+        updateCurrent()
+      } else {
+        events.value.unshift({
+          id: (prev?.id ?? 0) + 1,
+          start,
+          end: null,
+          freqHz: freq,
+          freqMinHz: Math.min(...acc.freqs),
+          freqMaxHz: Math.max(...acc.freqs),
+          levelPeakDb: acc.levelPeak,
+          levelMeanDb: acc.levelSum / acc.n,
+          prominenceDb: acc.promSum / acc.n,
+          frames: acc.n,
+        })
+      }
+      lastAcc = null
+      lockFreq = currentEvent.value?.freqHz ?? freq
       try {
         navigator.vibrate?.(200)
       } catch {
@@ -177,12 +203,13 @@ export function useBipDetector() {
       updateCurrent()
       const ev = currentEvent.value
       if (ev) ev.end = now - (s.offFrames - 1) * HOP_MS
-      acc = { freqs: [], levelPeak: -Infinity, levelSum: 0, promSum: 0, n: 0 }
+      lastAcc = acc
+      acc = emptyAcc()
       persist()
     }
     if (!on && !stable) {
       // no tone: drop accumulated stats from spurious frames
-      acc = { freqs: [], levelPeak: -Infinity, levelSum: 0, promSum: 0, n: 0 }
+      acc = emptyAcc()
     }
   }
 
@@ -217,7 +244,8 @@ export function useBipDetector() {
       recentTone = []
       runOn = 0
       on = false
-      acc = { freqs: [], levelPeak: -Infinity, levelSum: 0, promSum: 0, n: 0 }
+      acc = emptyAcc()
+      lastAcc = null
 
       isListening.value = true
       status.value = 'listening'

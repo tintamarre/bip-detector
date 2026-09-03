@@ -5,7 +5,7 @@ A small web app that listens to the microphone and logs every occurrence of a co
 start and end timestamp, duration, frequency, sound level. Events can be copied as plain text
 (one event) or CSV (all events).
 
-Live: https://tintamarre.github.io/bip-detector/
+Live: https://www.tintamarre.be/bip-detector/ (HTTPS is required for microphone access)
 
 ## How it works
 
